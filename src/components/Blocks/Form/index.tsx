@@ -1,174 +1,209 @@
-'use client'
-import type { Form as FormType } from '@payloadcms/plugin-form-builder/types'
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: Index as key */
+/** biome-ignore-all lint/suspicious/noExplicitAny: Uses any */
+/** biome-ignore-all lint/correctness/noUnusedVariables: Unused vars */
+/** biome-ignore-all lint/complexity/useOptionalChain: Chain */
+"use client";
+import type { Form as FormType } from "@payloadcms/plugin-form-builder/types";
 
-import { useRouter } from 'next/navigation'
-import React, { useCallback, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useRouter } from "next/navigation";
+import React, { useCallback, useState } from "react";
+import { useForm } from "react-hook-form";
 
-import { Button } from '../../Button'
-import { Gutter } from '../../Gutter'
-import RichText from '../../RichText'
-import { buildInitialFormState } from './buildInitialFormState'
-import { fields } from './fields'
-import classes from './index.module.scss'
+import { Button } from "../../Button";
+import { Gutter } from "../../Gutter";
+import RichText from "../../RichText";
+import { buildInitialFormState } from "./buildInitialFormState";
+import { fields } from "./fields";
+import classes from "./index.module.scss";
 
-export type Value = unknown
+export type Value = unknown;
 
 export interface Property {
-  [key: string]: Value
+	[key: string]: Value;
 }
 
 export interface Data {
-  [key: string]: Property | Property[] | Value
+	[key: string]: Property | Property[] | Value;
 }
 
 export type FormBlockType = {
-  blockName?: string
-  blockType?: 'formBlock'
-  enableIntro: boolean
-  form: FormType
-  introContent?: {
-    [k: string]: unknown
-  }[]
-}
+	blockName?: string;
+	blockType?: "formBlock";
+	enableIntro: boolean;
+	form: FormType;
+	introContent?: {
+		[k: string]: unknown;
+	}[];
+};
 
 export const FormBlock: React.FC<
-  FormBlockType & {
-    id?: string
-  }
+	FormBlockType & {
+		id?: string;
+	}
 > = (props) => {
-  const {
-    enableIntro,
-    form: formFromProps,
-    form: { id: formID, confirmationMessage, confirmationType, redirect, submitButtonLabel } = {},
-    introContent,
-  } = props
+	const {
+		enableIntro,
+		form: formFromProps,
+		form: {
+			id: formID,
+			confirmationMessage,
+			confirmationType,
+			redirect,
+			submitButtonLabel,
+		} = {},
+		introContent,
+	} = props;
 
-  const formMethods = useForm({
-    defaultValues: buildInitialFormState(formFromProps.fields),
-  })
-  const {
-    control,
-    formState: { errors },
-    getValues,
-    handleSubmit,
-    register,
-    setValue,
-  } = formMethods
+	const formMethods = useForm({
+		defaultValues: buildInitialFormState(formFromProps.fields),
+	});
+	const {
+		control,
+		formState: { errors },
+		getValues,
+		handleSubmit,
+		register,
+		setValue,
+	} = formMethods;
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [hasSubmitted, setHasSubmitted] = useState<boolean>()
-  const [error, setError] = useState<{ message: string; status?: string } | undefined>()
-  const router = useRouter()
+	const [isLoading, setIsLoading] = useState(false);
+	const [hasSubmitted, setHasSubmitted] = useState<boolean>();
+	const [error, setError] = useState<
+		{ message: string; status?: string } | undefined
+	>();
+	const router = useRouter();
 
-  const onSubmit = useCallback(
-    (data: Data) => {
-      let loadingTimerID: ReturnType<typeof setTimeout>
-      const submitForm = async () => {
-        setError(undefined)
+	const onSubmit = useCallback(
+		(data: Data) => {
+			let loadingTimerID: ReturnType<typeof setTimeout>;
+			const submitForm = async () => {
+				setError(undefined);
 
-        const dataToSend = Object.entries(data).map(([name, value]) => ({
-          field: name,
-          value,
-        }))
+				loadingTimerID = setTimeout(() => {
+					setIsLoading(true);
+				}, 1000);
 
-        // delay loading indicator by 1s
-        loadingTimerID = setTimeout(() => {
-          setIsLoading(true)
-        }, 1000)
+				const { cvfile, ...otherData } = data;
+				const actualFormID = String((formFromProps as any)?.id || formID);
+				const dataToSend = Object.entries(otherData).map(([name, value]) => ({
+					field: name,
+					value,
+				}));
 
-        try {
-          const req = await fetch(`${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/form-submissions`, {
-            body: JSON.stringify({
-              form: formID,
-              submissionData: dataToSend,
-            }),
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            method: 'POST',
-          })
+				const formData = new FormData();
+				formData.append(
+					"_payload",
+					JSON.stringify({
+						form: actualFormID,
+						submissionData: dataToSend,
+					}),
+				);
 
-          const res = await req.json()
+				if (cvfile) {
+					formData.append("cvfile", cvfile as Blob);
+				}
 
-          clearTimeout(loadingTimerID)
+				try {
+					const req = await fetch(
+						`${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/form-submissions`,
+						{
+							body: formData,
+							method: "POST",
+						},
+					);
 
-          if (req.status >= 400) {
-            setIsLoading(false)
+					const res = await req.json();
 
-            setError({
-              message: res.errors?.[0]?.message || 'Internal Server Error',
-              status: res.status,
-            })
+					clearTimeout(loadingTimerID);
 
-            return
-          }
+					if (req.status >= 400) {
+						setIsLoading(false);
 
-          setIsLoading(false)
-          setHasSubmitted(true)
+						setError({
+							message: res.errors?.[0]?.message || "Internal Server Error",
+							status: res.status,
+						});
 
-          if (confirmationType === 'redirect' && redirect) {
-            const { url } = redirect
+						return;
+					}
 
-            const redirectUrl = url
+					setIsLoading(false);
+					setHasSubmitted(true);
 
-            if (redirectUrl) router.push(redirectUrl)
-          }
-        } catch (err) {
-          console.warn(err)
-          setIsLoading(false)
-          setError({
-            message: 'Something went wrong.',
-          })
-        }
-      }
+					if (confirmationType === "redirect" && redirect) {
+						const { url } = redirect;
 
-      void submitForm()
-    },
-    [router, formID, redirect, confirmationType],
-  )
+						const redirectUrl = url;
 
-  return (
-    <Gutter>
-      <div
-        className={[classes.form, hasSubmitted && classes.hasSubmitted].filter(Boolean).join(' ')}
-      >
-        {enableIntro && introContent && !hasSubmitted && (
-          <RichText className={classes.intro} content={introContent} />
-        )}
-        {!isLoading && hasSubmitted && confirmationType === 'message' && (
-          <RichText className={classes.confirmationMessage} content={confirmationMessage} />
-        )}
-        {isLoading && !hasSubmitted && <p>Loading, please wait...</p>}
-        {error && <div>{`${error.status || '500'}: ${error.message || ''}`}</div>}
-        {!hasSubmitted && (
-          <form id={formID} onSubmit={handleSubmit(onSubmit)}>
-            <div className={classes.fieldWrap}>
-              {formFromProps &&
-                formFromProps.fields &&
-                formFromProps.fields.map((field, index) => {
-                  const Field: React.FC<any> = fields?.[field.blockType]
-                  if (Field) {
-                    return (
-                      <React.Fragment key={index}>
-                        <Field
-                          form={formFromProps}
-                          {...field}
-                          {...formMethods}
-                          control={control}
-                          errors={errors}
-                          register={register}
-                        />
-                      </React.Fragment>
-                    )
-                  }
-                  return null
-                })}
-            </div>
-            <Button appearance="primary" el="button" form={formID} label={submitButtonLabel} />
-          </form>
-        )}
-      </div>
-    </Gutter>
-  )
-}
+						if (redirectUrl) router.push(redirectUrl);
+					}
+				} catch (err) {
+					console.warn(err);
+					setIsLoading(false);
+					setError({
+						message: "Something went wrong.",
+					});
+				}
+			};
+
+			void submitForm();
+		},
+		[router, formID, redirect, confirmationType, formFromProps],
+	);
+
+	return (
+		<Gutter>
+			<div
+				className={[classes.form, hasSubmitted && classes.hasSubmitted]
+					.filter(Boolean)
+					.join(" ")}
+			>
+				{enableIntro && introContent && !hasSubmitted && (
+					<RichText className={classes.intro} content={introContent} />
+				)}
+				{!isLoading && hasSubmitted && confirmationType === "message" && (
+					<RichText
+						className={classes.confirmationMessage}
+						content={confirmationMessage}
+					/>
+				)}
+				{isLoading && !hasSubmitted && <p>Loading, please wait...</p>}
+				{error && (
+					<div>{`${error.status || "500"}: ${error.message || ""}`}</div>
+				)}
+				{!hasSubmitted && (
+					<form id={formID} onSubmit={handleSubmit(onSubmit)}>
+						<div className={classes.fieldWrap}>
+							{formFromProps &&
+								formFromProps.fields &&
+								formFromProps.fields.map((field, index) => {
+									const Field: React.FC<any> = fields?.[field.blockType];
+									if (Field) {
+										return (
+											<React.Fragment key={index}>
+												<Field
+													form={formFromProps}
+													{...field}
+													{...formMethods}
+													control={control}
+													errors={errors}
+													register={register}
+												/>
+											</React.Fragment>
+										);
+									}
+									return null;
+								})}
+						</div>
+						<Button
+							appearance="primary"
+							el="button"
+							form={formID}
+							label={submitButtonLabel}
+						/>
+					</form>
+				)}
+			</div>
+		</Gutter>
+	);
+};
