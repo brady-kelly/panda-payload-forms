@@ -70,6 +70,7 @@ export interface Config {
     pages: Page;
     users: User;
     'job-applications': JobApplication;
+    'job-application-files': JobApplicationFile;
     forms: Form;
     'form-submissions': FormSubmission;
     'payload-kv': PayloadKv;
@@ -87,6 +88,7 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'job-applications': JobApplicationsSelect<false> | JobApplicationsSelect<true>;
+    'job-application-files': JobApplicationFilesSelect<false> | JobApplicationFilesSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -287,7 +289,7 @@ export interface Form {
             /**
              * Select which upload collection to store files in
              */
-            uploadCollection: 'job-applications';
+            uploadCollection: 'job-application-files';
             /**
              * Restrict allowed file types (e.g., image/*, application/pdf). Leave empty to allow all types.
              */
@@ -404,8 +406,29 @@ export interface JobApplication {
   idNumber?: string | null;
   ogFilename: string;
   fullName?: string | null;
+  cvfile?: (string | null) | JobApplicationFile;
   slug?: string | null;
   folder?: (string | null) | FolderInterface;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "job-application-files".
+ */
+export interface JobApplicationFile {
+  id: string;
+  cvfile?: (string | null) | JobApplication;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -463,13 +486,13 @@ export interface FormSubmission {
     | {
         field: string;
         value: {
-          relationTo: 'job-applications';
-          value: string | JobApplication;
+          relationTo: 'job-application-files';
+          value: string | JobApplicationFile;
         }[];
         id?: string | null;
       }[]
     | null;
-  cvfile?: (string | null) | JobApplication;
+  cvfile?: (string | null) | JobApplicationFile;
   updatedAt: string;
   createdAt: string;
 }
@@ -508,6 +531,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'job-applications';
         value: string | JobApplication;
+      } | null)
+    | ({
+        relationTo: 'job-application-files';
+        value: string | JobApplicationFile;
       } | null)
     | ({
         relationTo: 'forms';
@@ -619,8 +646,28 @@ export interface JobApplicationsSelect<T extends boolean = true> {
   idNumber?: T;
   ogFilename?: T;
   fullName?: T;
+  cvfile?: T;
   slug?: T;
   folder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "job-application-files_select".
+ */
+export interface JobApplicationFilesSelect<T extends boolean = true> {
+  cvfile?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;

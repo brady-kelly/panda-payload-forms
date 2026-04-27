@@ -1,5 +1,5 @@
 /** biome-ignore-all assist/source/organizeImports: TODO: Imports */
-import type { CollectionConfig } from "payload";
+import type { CollectionConfig, Field } from "payload";
 import { slugField } from "../../fields/slug";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -62,16 +62,14 @@ export const JobApplications: CollectionConfig = {
 				],
 			},
 		},
+		{
+			name: "cvfile",
+			type: "upload",
+			relationTo: "job-application-files",
+		},
 		slugField(),
 	],
-	upload: {
-		staticDir: path.resolve(dirname, "../../public/media"),
-		mimeTypes: [
-			"application/pdf",
-			"application/msword",
-			"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-		],
-	},
+	upload: true,
 	versions: {
 		drafts: true,
 	},

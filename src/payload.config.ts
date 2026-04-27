@@ -17,6 +17,7 @@ import { Pages } from "./collections/Pages";
 import { Users } from "./collections/Users";
 import { MainMenu } from "./globals/MainMenu";
 import { JobApplications } from "./collections/Applications/applications";
+import { JobApplicationFiles } from "./collections/Applications/application-files";
 
 export const maxCvSize = 2 * 1024 * 1024;
 
@@ -31,7 +32,7 @@ export default buildConfig({
 		},
 		user: Users.slug,
 	},
-	collections: [Pages, Users, JobApplications],
+	collections: [Pages, Users, JobApplications, JobApplicationFiles],
 	// We need to set CORS rules pointing to our hosted domains for the frontend to be able to submit to our API
 	cors: [process.env.NEXT_PUBLIC_PAYLOAD_URL || ""],
 	db: mongooseAdapter({
@@ -68,11 +69,11 @@ export default buildConfig({
 					{
 						name: "cvfile",
 						type: "upload",
-						relationTo: "job-applications", // Your upload-enabled collection
+						relationTo: "job-application-files", // Your upload-enabled collection
 					},
 				],
 			},
-			uploadCollections: ["job-applications"], // Required — available upload collections
+			uploadCollections: ["job-application-files"], // Required — available upload collections
 		}),
 	],
 	secret: process.env.PAYLOAD_SECRET || "",

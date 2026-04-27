@@ -1,0 +1,42 @@
+{
+	"createdAt": "2026-04-25T12:40:43.807Z",
+	"updatedAt": "2026-04-26T02:11:59.635Z",
+	"title": "Careers",
+
+	"fields": [
+		{
+			"blockType": "upload",
+			"name": "cvfile",
+			"label": "Select a File",
+			"uploadCollection": "job-application-files",
+
+			"mimeTypes": [
+				{
+					"mimeType": "application/pdf",
+					"id": "69ecbd0e1662094c958b47c4"
+				}
+			],
+			"width": 50,
+			"maxFileSize": 5242880,
+			"required": true,
+			"id": "69ecb592c42b77379a5c91e9"
+		},
+
+		{
+			"blockType": "text",
+			"name": "name",
+			"label": "Name",
+			"width": 50,
+			"required": true,
+			"id": "69ecba8f1662094c958b47c0"
+		}
+	],
+	"submitButtonLabel": "Upload",
+	"confirmationType": "message",
+	"confirmationMessage": {},
+
+	"redirect": {},
+
+	"emails": [],
+	"id": "69ecb64bc011dde6f9465f91"
+}
